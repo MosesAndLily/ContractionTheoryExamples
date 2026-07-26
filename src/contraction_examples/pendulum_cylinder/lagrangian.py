@@ -23,11 +23,9 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, Normalize, to_rgb
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
+from ..style import HALO, INK, MUTED, ORANGE, SURFACE
 from . import cylinder
-from .animate import (
-    AZIM, ELEV, HALO, INK, MUTED, ORANGE, SURFACE, VEL_SCALE, Z_MAX,
-    _facing_factor,
-)
+from .animate import AZIM, ELEV, VEL_SCALE, Z_MAX, _facing_factor
 from .dynamics import PendulumParams, Trajectory, simulate
 
 # Sequential blue ramp (dataviz reference palette, steps 100 -> 700).

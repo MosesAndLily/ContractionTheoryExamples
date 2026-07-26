@@ -8,40 +8,28 @@ directory. Entry point: ``uv run pendulum-cylinder``.
 from __future__ import annotations
 
 import argparse
-import subprocess
 from pathlib import Path
 
 import matplotlib
 
 matplotlib.use("Agg")
 
-import imageio_ffmpeg
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import animation
-from matplotlib import patheffects
 from matplotlib.collections import LineCollection
 from matplotlib.colors import to_rgb
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
+from ..media_utils import mp4_to_gif, render_video
+from ..style import BLUE, GUIDE, HALO, INK, MUTED, ORANGE, SURFACE
 from . import cylinder
 from .dynamics import PendulumParams, Trajectory, simulate
-
-# Validated categorical palette (dataviz reference instance, light mode).
-BLUE = "#2a78d6"    # trajectory in state space
-ORANGE = "#eb6834"  # the current state (bob + point on the cylinder)
-SURFACE = "#fcfcfb"
-INK = "#0b0b0b"
-MUTED = "#52514e"
-GUIDE = "#c9c8c3"
 
 VEL_SCALE = 7.0        # rad/s of theta_dot per unit of cylinder height
 Z_MAX = 1.75           # cylinder half-height in embedding units
 TRAIL_FRAMES = 45      # length of the bright "recent" window, in frames
 ELEV, AZIM = 18.0, -78.0
-# white casing so labels stay readable when the trajectory crosses them
-HALO = [patheffects.withStroke(linewidth=2.5, foreground=SURFACE)]
 
 
 def _facing_factor(theta: np.ndarray) -> np.ndarray:
@@ -275,43 +263,6 @@ class PendulumCylinderFigure:
 
 
 # ------------------------------------------------------------------ rendering
-def render_video(fig_obj: PendulumCylinderFigure, path: Path, fps: int,
-                 hold_seconds: float = 1.2) -> None:
-    matplotlib.rcParams["animation.ffmpeg_path"] = imageio_ffmpeg.get_ffmpeg_exe()
-    frames = fig_obj.n + int(hold_seconds * fps)
-
-    def _progress(i, n):
-        if i % 60 == 0 or i == n - 1:
-            print(f"  frame {i + 1}/{n}")
-
-    anim = animation.FuncAnimation(
-        fig_obj.fig, fig_obj.update, frames=frames, interval=1000 / fps, blit=False
-    )
-    writer = animation.FFMpegWriter(
-        fps=fps, codec="h264",
-        extra_args=["-pix_fmt", "yuv420p", "-crf", "19", "-preset", "medium"],
-    )
-    anim.save(path, writer=writer, progress_callback=_progress)
-
-
-def mp4_to_gif(mp4: Path, gif: Path, fps: int = 18, width: int = 880) -> None:
-    """Small palette-optimized GIF preview generated from the MP4."""
-    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
-    vf = (
-        f"fps={fps},scale={width}:-1:flags=lanczos,"
-        "split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer"
-    )
-    try:
-        subprocess.run(
-            [ffmpeg, "-y", "-i", str(mp4), "-filter_complex", vf,
-             "-loop", "0", str(gif)],
-            check=True, capture_output=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        print(exc.stderr.decode(errors="replace"))
-        raise
-
-
 def render_still(traj: Trajectory, params: PendulumParams, path: Path,
                  t_snap: float, dpi: int = 200) -> None:
     """Summary image: full trajectory on the cylinder, pendulum at t = t_snap."""
@@ -354,7 +305,7 @@ def main(argv: list[str] | None = None) -> None:
         gif = args.outdir / "pendulum_cylinder.gif"
         print(f"Rendering video -> {mp4}")
         fig_obj = PendulumCylinderFigure(traj, params)
-        render_video(fig_obj, mp4, fps=args.fps)
+        render_video(fig_obj.fig, fig_obj.update, fig_obj.n, mp4, fps=args.fps)
         plt.close(fig_obj.fig)
         print(f"Rendering GIF preview -> {gif}")
         mp4_to_gif(mp4, gif)

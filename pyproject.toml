@@ -15,6 +15,7 @@ dependencies = [
 [project.scripts]
 pendulum-cylinder = "contraction_examples.pendulum_cylinder.animate:main"
 pendulum-lagrangian = "contraction_examples.pendulum_cylinder.lagrangian:main"
+double-pendulum-torus = "contraction_examples.double_pendulum_torus.animate:main"
 
 [build-system]
 requires = ["hatchling"]

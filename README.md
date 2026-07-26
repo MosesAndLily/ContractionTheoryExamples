@@ -59,23 +59,55 @@ Useful flags for `pendulum-cylinder`: `--duration`, `--fps`, `--damping`,
 `--outdir`. For `pendulum-lagrangian`: the same simulation flags plus
 `--no-trajectory` for the bare colormap. See `--help` on either command.
 
+## Example 2 — a double pendulum and its configuration torus
+
+A planar double pendulum in absolute angles (θ₁, θ₂), each measured from the
+downward vertical. The configuration space is the torus
+
+$$T^2 \cong S^1 \times S^1,$$
+
+drawn as a wireframe: θ₁ runs around the main ring, θ₂ around the tube. The
+undamped chaotic motion (energy is conserved to ~1e-9 by the DOP853
+integrator) makes the configuration point wind around both directions of the
+torus, leaving a persistent trace with the recent past drawn brighter.
+
+![Double pendulum and its configuration trace on the torus](media/double_pendulum_torus.gif)
+
+Summary figure: [`media/double_pendulum_torus.png`](media/double_pendulum_torus.png)
+· video: [`media/double_pendulum_torus.mp4`](media/double_pendulum_torus.mp4)
+
+```sh
+uv run double-pendulum-torus            # renders PNG + MP4 + GIF into media/
+uv run double-pendulum-torus --no-video # summary PNG only (fast)
+```
+
+Flags: `--duration`, `--fps`, `--theta1-0`, `--theta2-0`, `--theta1-dot0`,
+`--theta2-dot0`, `--damping1`, `--damping2`, `--t-snap`, `--outdir`.
+
 ## Repository layout
 
 ```
 ├── pyproject.toml                     # uv project; console scripts (see [project.scripts])
 ├── media/                             # rendered outputs, kept in the repo
 └── src/contraction_examples/
-    └── pendulum_cylinder/
-        ├── dynamics.py                # pendulum ODE + integration
-        ├── cylinder.py                # embedding of TS¹ ≅ S¹ × ℝ into R³
-        ├── animate.py                 # two-panel figure, animation, CLI
-        └── lagrangian.py              # Lagrangian colormap on TS¹, CLI
+    ├── style.py                       # shared palette + label conventions
+    ├── media_utils.py                 # shared MP4/GIF writers (bundled ffmpeg)
+    ├── pendulum_cylinder/
+    │   ├── dynamics.py                # pendulum ODE + integration
+    │   ├── cylinder.py                # embedding of TS¹ ≅ S¹ × ℝ into R³
+    │   ├── animate.py                 # two-panel figure, animation, CLI
+    │   └── lagrangian.py              # Lagrangian colormap on TS¹, CLI
+    └── double_pendulum_torus/
+        ├── dynamics.py                # double pendulum ODE + energy + integration
+        ├── torus.py                   # embedding of T² ≅ S¹ × S¹ into R³
+        └── animate.py                 # two-panel figure, animation, CLI
 ```
 
 Conventions for adding a new example: put the model in its own package with a
 `dynamics.py` (simulation only, no plotting), keep geometry/embedding helpers
-separate from figure code, expose a console script in `pyproject.toml`, and
-render into `media/`.
+separate from figure code, reuse `style.py` (palette) and `media_utils.py`
+(MP4/GIF writers), expose a console script in `pyproject.toml`, and render
+into `media/`.
 
 ## Requirements
 
