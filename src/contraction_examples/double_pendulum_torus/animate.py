@@ -21,7 +21,7 @@ from matplotlib.colors import to_rgb
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from ..media_utils import mp4_to_gif, render_video
-from ..style import BLUE, GUIDE, HALO, INK, MUTED, ORANGE, SURFACE
+from ..style import GUIDE, HALO, INK, MUTED, ORANGE, SURFACE
 from . import torus
 from .dynamics import DoublePendulumParams, Trajectory, simulate
 
@@ -69,7 +69,6 @@ class DoublePendulumTorusFigure:
             0.5 * (traj.theta1[:-1] + traj.theta1[1:]),
             0.5 * (traj.theta2[:-1] + traj.theta2[1:]),
         )
-        self.blue_rgb = np.array(to_rgb(BLUE))
         self.orange_rgb = np.array(to_rgb(ORANGE))
 
         self.fig = plt.figure(figsize=(12.8, 6.0), dpi=dpi)
@@ -192,7 +191,7 @@ class DoublePendulumTorusFigure:
             k = min(i, TRAIL_FRAMES * OVERSAMPLE)
             if k:
                 age[-k:] = np.linspace(0.35, 0.95, k)
-        rgba = np.tile(np.append(self.blue_rgb, 0.0), (i, 1))
+        rgba = np.tile(np.append(self.orange_rgb, 0.0), (i, 1))
         rgba[:, 3] = np.clip(age * facing, 0.0, 1.0)
         return rgba
 
@@ -236,9 +235,9 @@ class DoublePendulumTorusFigure:
         self._place_state_markers(i_snap)
         self.trail.set_segments([])
         x0, y0, z0 = self.torus_pts[0]
-        self.ax_right.plot([x0], [y0], [z0], "o", ms=6, color=BLUE,
+        self.ax_right.plot([x0], [y0], [z0], "o", ms=6, color=ORANGE,
                            mec="white", mew=1.2, zorder=7)
-        self.ax_right.text(x0, y0, z0 + 0.14, "start", fontsize=9, color=BLUE,
+        self.ax_right.text(x0, y0, z0 + 0.14, "start", fontsize=9, color=ORANGE,
                            ha="center", zorder=7, path_effects=HALO)
 
 
