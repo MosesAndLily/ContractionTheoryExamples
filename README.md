@@ -84,6 +84,33 @@ uv run double-pendulum-torus --no-video # summary PNG only (fast)
 Flags: `--duration`, `--fps`, `--theta1-0`, `--theta2-0`, `--theta1-dot0`,
 `--theta2-dot0`, `--damping1`, `--damping2`, `--t-snap`, `--outdir`.
 
+### Linear flow — a straight line on the torus
+
+The same two-bar linkage with gravity off and each joint turning at a
+constant rate ω₁, ω₂: the configuration traces a *straight line* in the flat
+torus coordinates, (θ₁, θ₂) = (θ₁₀ + ω₁t, θ₂₀ + ω₂t) — the geodesic flow of
+the flat metric on T². With ω₂/ω₁ = φ (the golden ratio, default) the line
+never closes and fills the torus densely; a rational ratio closes into a
+torus knot/link curve.
+
+![Linear flow of the linkage on the torus](media/torus_linear_flow.gif)
+
+Summary figure: [`media/torus_linear_flow.png`](media/torus_linear_flow.png)
+· video: [`media/torus_linear_flow.mp4`](media/torus_linear_flow.mp4)
+
+```sh
+uv run torus-linear-flow                      # golden-ratio winding
+uv run torus-linear-flow --omega2 1.5         # closes into a (2,3) curve
+uv run torus-linear-flow --true-dynamics      # real zero-g double pendulum
+```
+
+Physics note: for the *actual* zero-gravity double pendulum, constant joint
+rates solve the equations of motion exactly only when ω₁ = ω₂ (the inertial
+coupling term m₂l₁l₂ sin(θ₁−θ₂)·θ̇² cancels); otherwise the coupling bends
+the line. The default drives the joints kinematically (two decoupled
+rotors); `--true-dynamics` integrates the real thing from the same initial
+velocities so you can see the difference.
+
 ## Repository layout
 
 ```
@@ -100,7 +127,8 @@ Flags: `--duration`, `--fps`, `--theta1-0`, `--theta2-0`, `--theta1-dot0`,
     └── double_pendulum_torus/
         ├── dynamics.py                # double pendulum ODE + energy + integration
         ├── torus.py                   # embedding of T² ≅ S¹ × S¹ into R³
-        └── animate.py                 # two-panel figure, animation, CLI
+        ├── animate.py                 # two-panel figure, animation, CLI
+        └── linear_flow.py             # straight-line (geodesic) flow on T², CLI
 ```
 
 Conventions for adding a new example: put the model in its own package with a

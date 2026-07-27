@@ -47,9 +47,12 @@ class DoublePendulumTorusFigure:
     """Builds the two-panel figure and exposes ``update(frame)`` for animation."""
 
     def __init__(self, traj: Trajectory, params: DoublePendulumParams,
-                 dpi: int = 100):
+                 dpi: int = 100, show_gravity: bool = True,
+                 show_equilibrium: bool = True):
         self.traj = traj
         self.params = params
+        self.show_gravity = show_gravity
+        self.show_equilibrium = show_equilibrium
         self.n = len(traj.t)  # simulation samples (OVERSAMPLE per video frame)
         self.n_frames = int(np.ceil(self.n / OVERSAMPLE))
 
@@ -67,6 +70,7 @@ class DoublePendulumTorusFigure:
             0.5 * (traj.theta2[:-1] + traj.theta2[1:]),
         )
         self.blue_rgb = np.array(to_rgb(BLUE))
+        self.orange_rgb = np.array(to_rgb(ORANGE))
 
         self.fig = plt.figure(figsize=(12.8, 6.0), dpi=dpi)
         self.fig.patch.set_facecolor(SURFACE)
@@ -103,10 +107,10 @@ class DoublePendulumTorusFigure:
         ax.plot([-0.22, 0.22], [0, 0], color=INK, lw=1.4, zorder=3)
         for xi in np.linspace(-0.19, 0.16, 6):
             ax.plot([xi, xi + 0.06], [0.0, 0.06], color=MUTED, lw=0.9, zorder=3)
-        # gravity arrow
-        ax.annotate("", xy=(1.02, -0.86), xytext=(1.02, -0.58),
-                    arrowprops=dict(arrowstyle="-|>", color=MUTED, lw=1.2))
-        ax.text(1.07, -0.72, r"$g$", fontsize=11, color=MUTED, va="center")
+        if self.show_gravity:
+            ax.annotate("", xy=(1.02, -0.86), xytext=(1.02, -0.58),
+                        arrowprops=dict(arrowstyle="-|>", color=MUTED, lw=1.2))
+            ax.text(1.07, -0.72, r"$g$", fontsize=11, color=MUTED, va="center")
 
         self.trail = LineCollection([], linewidths=2.0, zorder=4)
         ax.add_collection(self.trail)
@@ -157,11 +161,12 @@ class DoublePendulumTorusFigure:
         ax.text(mx[0], my[0], mz[0] + 0.14, r"$\theta_1 = 0$",
                 fontsize=8.5, color=MUTED, ha="center", path_effects=HALO)
 
-        # hanging equilibrium (0, 0): front of the outer equator
-        ex, ey, ez = torus.embed(np.array([0.0]), np.array([0.0]))
-        ax.plot([ex[0]], [ey[0]], [ez[0]], "o", ms=7, color=INK, zorder=6)
-        ax.text(ex[0] - 0.42, ey[0], ez[0] - 0.14, "stable eq.", fontsize=9,
-                color=INK, ha="right", zorder=6, path_effects=HALO)
+        if self.show_equilibrium:
+            # hanging equilibrium (0, 0): front of the outer equator
+            ex, ey, ez = torus.embed(np.array([0.0]), np.array([0.0]))
+            ax.plot([ex[0]], [ey[0]], [ez[0]], "o", ms=7, color=INK, zorder=6)
+            ax.text(ex[0] - 0.42, ey[0], ez[0] - 0.14, "stable eq.", fontsize=9,
+                    color=INK, ha="right", zorder=6, path_effects=HALO)
 
         seed = [self.segments[0] * 0.0 + self.torus_pts[0]]
         self.trace = Line3DCollection(seed, linewidths=1.9, zorder=5)
@@ -171,8 +176,9 @@ class DoublePendulumTorusFigure:
 
     # ---------------------------------------------------------------- update
     def _trail_colors(self, k: int) -> np.ndarray:
+        """Bob trail in orange, matching the bobs (the current state's color)."""
         alphas = np.linspace(0.0, 0.55, k)
-        rgba = np.tile(np.append(self.blue_rgb, 0.0), (k, 1))
+        rgba = np.tile(np.append(self.orange_rgb, 0.0), (k, 1))
         rgba[:, 3] = alphas
         return rgba
 
