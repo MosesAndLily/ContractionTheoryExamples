@@ -180,6 +180,51 @@ Flags: `--g-over-l`, `--c`, `--spread` (initial fan half-width; a warning is
 printed if it exceeds the P-contraction region), `--n`, `--duration`,
 `--fps`, `--t-snap`, `--outdir`.
 
+## Example 5 — contraction on the torus: the double pendulum and its mass-matrix metric
+
+The damped double pendulum M(q)q̈ + C(q, q̇)q̇ + g(q) + Dq̇ = 0 lives on the
+configuration torus T². **Is the contraction metric the mass matrix?**
+Almost: M(q) is the kinetic-energy Riemannian metric on T², and it is the
+*velocity block* of the contraction metric — but by itself it only gives
+semi-contraction. With M₀, K₀ the mass and stiffness matrices at the
+hanging equilibrium, the energy metric diag(K₀, M₀) satisfies
+λ_max(PA + AᵀP) = 0 (dissipation acts only through δq̇, the same stall as
+Example 3's circle). The classic cross-term repair
+
+$$P = \begin{bmatrix} K_0 + \varepsilon D & \varepsilon M_0 \\ \varepsilon M_0 & M_0 \end{bmatrix}
+\quad\Longrightarrow\quad
+PA + A^\top P = -2\,\mathrm{blkdiag}(\varepsilon K_0,\ D - \varepsilon M_0) \prec 0$$
+
+(exact identity, valid whenever K₀ ≻ 0 and D − εM₀ ≻ 0) makes the
+linearization strictly contracting. For the nonlinear pendulum the same
+constant P certifies contraction wherever PJ(x) + J(x)ᵀP ≺ 0, with J the
+state Jacobian: the animation paints λ_max(PJ + JᵀP) on the q̇ = 0 slice of
+the torus (blue island = contracting, dashed line = zero contour) and runs
+a 3×3 fan of trajectories inside it. The certificate is checked along all
+inter-trajectory *segments* (that is what the finite-distance decay proof
+integrates over), and the max pairwise P-distance decays monotonically
+while the Euclidean one transiently grows.
+
+Two honest caveats built into the example: contraction on T² is
+necessarily local (the double pendulum has four equilibria — one stable,
+three unstable, shown as open circles — so no metric can contract the
+whole torus), and the certified region for this constant-chart metric is
+small (`--spread` beyond it prints a warning; promoting M₀ → M(q) to the
+state-dependent Riemannian metric is the standard way to enlarge it).
+
+![Double pendulum contraction region and fan on the torus](media/double_pendulum_contraction.gif)
+
+Summary figure: [`media/double_pendulum_contraction.png`](media/double_pendulum_contraction.png)
+· video: [`media/double_pendulum_contraction.mp4`](media/double_pendulum_contraction.mp4)
+
+```sh
+uv run double-pendulum-contraction            # analysis + PNG + MP4 + GIF
+uv run double-pendulum-contraction --no-video # analysis + summary PNG only
+```
+
+Flags: `--eps` (cross-term weight; rejected if D − εM₀ ⊁ 0), `--spread`,
+`--gravity`, `--damping`, `--duration`, `--fps`, `--t-snap`, `--outdir`.
+
 ## Repository layout
 
 ```
@@ -194,6 +239,9 @@ printed if it exceeds the P-contraction region), `--n`, `--duration`,
     │   └── animate.py                 # phase-plane + norms figure, CLI
     ├── pendulum_contraction/
     │   └── animate.py                 # fan of pendulums on S¹ + P-distance, CLI
+    ├── double_pendulum_contraction/
+    │   ├── metric.py                  # block metric P from M₀, K₀, D; certificates
+    │   └── animate.py                 # painted torus + P-distance panel, CLI
     ├── pendulum_cylinder/
     │   ├── dynamics.py                # pendulum ODE + integration
     │   ├── cylinder.py                # embedding of TS¹ ≅ S¹ × ℝ into R³
