@@ -30,6 +30,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.linalg import eigh
 
 from ..mass_spring_damper.dynamics import make_A
 from ..mass_spring_damper.metrics import lyapunov_P, quad_form
@@ -198,12 +199,32 @@ class PendulumContractionFigure:
             ax.spines[side].set_linewidth(0.8)
         ax.tick_params(colors=MUTED, labelsize=9)
 
-        # asymptotic rate of the linearization: Re(eig) = -c/2
+        # asymptotic average rate of the linearization: Re(eig) = -c/2.
+        # A trend line, not a bound — the P-curve breathes around it.
         rate = self.params.damping / 2.0
         ref = self.d_p[0] * np.exp(-rate * self.t)
         ax.plot(self.t, ref, color=GUIDE, lw=1.0, zorder=2)
-        ax.text(self.t[-1] * 0.80, ref[int(0.80 * self.n)] * 0.30,
-                rf"$\propto e^{{-{rate:g}\,t}}$", fontsize=9, color=MUTED)
+        ax.text(self.t[-1] * 0.80, ref[int(0.80 * self.n)] * 0.16,
+                rf"average: $\propto e^{{-{rate:g}\,t}}$", fontsize=9,
+                color=MUTED)
+        # guaranteed envelope: worst-case contraction rate of the pencil
+        # (Q(theta), P) over the region the fan actually occupies
+        k = self.params.gravity / self.params.length
+        c = self.params.damping
+        spread0 = np.abs(self.Z[:, 0, 0]).max()
+        rate_min = np.inf
+        for th in np.linspace(0.0, spread0, 200):
+            Ath = np.array([[0.0, 1.0], [-k * np.cos(th), -c]])
+            Q = -(self.P @ Ath + Ath.T @ self.P)
+            rate_min = min(rate_min, eigh(Q, self.P, eigvals_only=True)[0])
+        if rate_min > 0:
+            ref_g = self.d_p[0] * np.exp(-0.5 * rate_min * self.t)
+            ax.plot(self.t, ref_g, color=MUTED, lw=1.0, ls=(0, (6, 3)),
+                    alpha=0.65, zorder=2)
+            ax.text(self.t[-1] * 0.52, ref_g[int(0.52 * self.n)] * 0.48,
+                    r"guaranteed bound over the fan region: $\propto "
+                    rf"e^{{-{0.5 * rate_min:.2f}\,t}}$",
+                    fontsize=9, color=MUTED, ha="center")
 
         (self.line_eye,) = ax.plot(
             [], [], ls=(0, (5, 3)), lw=1.8, color=RED, zorder=3,
