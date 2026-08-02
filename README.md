@@ -111,6 +111,45 @@ the line. The default drives the joints kinematically (two decoupled
 rotors); `--true-dynamics` integrates the real thing from the same initial
 velocities so you can see the difference.
 
+## Example 3 — contraction needs a metric: the mass-spring-damper
+
+The mass-spring-damper ż = Az with A = [[0, 1], [−k, −c]] (m = 1, k = 2,
+c = 1 by default) is exponentially stable — eig(A) = −½ ± (√7/2)i — yet it
+is **not** contracting in the Euclidean metric. The symmetric part
+A + Aᵀ = [[0, −1], [−1, −2]] is *indefinite*, eig = −1 ± √2 ≈ {+0.41, −2.41},
+so
+
+$$\tfrac{d}{dt}\|\delta z\|^2 = \delta z^\top (A + A^\top)\,\delta z$$
+
+is zero at every turning point and **positive** on part of every
+oscillation: the Euclidean norm of a perturbation transiently *grows*.
+Solving the Lyapunov equation PA + AᵀP = −I (done in
+[`metrics.py`](src/contraction_examples/mass_spring_damper/metrics.py) via
+`scipy.linalg.solve_continuous_lyapunov`) gives
+P = [[7/4, 1/4], [1/4, 3/4]], and in the weighted norm zᵀPz the same flow
+contracts at every instant: d/dt (zᵀPz) = −‖z‖².
+
+The animation shows exactly where P lives — in the **shape of the level
+sets**. The Euclidean circle through the current state stalls and even
+expands as the spiral crosses it, while the tilted P-ellipse shrinks
+monotonically; on the log-scale panel ‖z‖² wobbles against the exponential
+envelope (flat or rising between turning points) while zᵀPz is a clean
+exponential.
+
+![Mass-spring-damper: Euclidean circle stalls, P-ellipse contracts](media/mass_spring_damper.gif)
+
+Summary figure: [`media/mass_spring_damper.png`](media/mass_spring_damper.png)
+· video: [`media/mass_spring_damper.mp4`](media/mass_spring_damper.mp4)
+
+```sh
+uv run mass-spring-damper            # renders PNG + MP4 + GIF into media/
+uv run mass-spring-damper --no-video # summary PNG only (fast)
+```
+
+Flags: `--k`, `--c` (try `--k 1` for the classic semi-definite case where
+the norm merely stalls), `--duration`, `--fps`, `--x0`, `--xdot0`,
+`--t-snap`, `--outdir`.
+
 ## Repository layout
 
 ```
@@ -119,6 +158,10 @@ velocities so you can see the difference.
 └── src/contraction_examples/
     ├── style.py                       # shared palette + label conventions
     ├── media_utils.py                 # shared MP4/GIF writers (bundled ffmpeg)
+    ├── mass_spring_damper/
+    │   ├── dynamics.py                # ż = Az, A = [[0,1],[−k,−c]]
+    │   ├── metrics.py                 # Lyapunov P, quadratic forms, level sets
+    │   └── animate.py                 # phase-plane + norms figure, CLI
     ├── pendulum_cylinder/
     │   ├── dynamics.py                # pendulum ODE + integration
     │   ├── cylinder.py                # embedding of TS¹ ≅ S¹ × ℝ into R³
