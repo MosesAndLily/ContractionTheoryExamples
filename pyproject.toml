@@ -18,6 +18,7 @@ pendulum-lagrangian = "contraction_examples.pendulum_cylinder.lagrangian:main"
 double-pendulum-torus = "contraction_examples.double_pendulum_torus.animate:main"
 torus-linear-flow = "contraction_examples.double_pendulum_torus.linear_flow:main"
 mass-spring-damper = "contraction_examples.mass_spring_damper.animate:main"
+pendulum-contraction = "contraction_examples.pendulum_contraction.animate:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -150,6 +150,36 @@ Flags: `--k`, `--c` (try `--k 1` for the classic semi-definite case where
 the norm merely stalls), `--duration`, `--fps`, `--x0`, `--xdot0`,
 `--t-snap`, `--outdir`.
 
+## Example 4 — contraction on the circle: a fan of pendulums
+
+The damped pendulum θ̈ = −2 sin θ − θ̇ (m = 1, g/l = 2, c = 1) linearizes at
+the hanging equilibrium to **exactly** the A of Example 3, so the same
+Lyapunov metric P = [[7/4, 1/4], [1/4, 3/4]] applies — now on the
+configuration manifold S¹. The state-dependent Jacobian is
+A(θ) = [[0, 1], [−2 cos θ, −1]], and the fixed metric P contracts wherever
+
+$$P A(\theta) + A(\theta)^\top P \prec 0 \quad\Longleftrightarrow\quad \cos\theta > \tfrac{11 - 2\sqrt{10}}{9} \approx 0.52,$$
+
+i.e. |θ| < 1.02 rad. A fan of seven pendulums released inside that region
+(θ₀ ∈ [−0.9, 0.9]) therefore contracts onto a single motion: the maximal
+pairwise P-distance (with Δθ measured on S¹) decreases **monotonically**,
+while the Euclidean distance between the same trajectories transiently
+grows — the same metric story as Example 3, transported to a manifold.
+
+![Fan of pendulums on S¹ contracting in the P metric](media/pendulum_contraction_s1.gif)
+
+Summary figure: [`media/pendulum_contraction_s1.png`](media/pendulum_contraction_s1.png)
+· video: [`media/pendulum_contraction_s1.mp4`](media/pendulum_contraction_s1.mp4)
+
+```sh
+uv run pendulum-contraction            # renders PNG + MP4 + GIF into media/
+uv run pendulum-contraction --no-video # summary PNG only (fast)
+```
+
+Flags: `--g-over-l`, `--c`, `--spread` (initial fan half-width; a warning is
+printed if it exceeds the P-contraction region), `--n`, `--duration`,
+`--fps`, `--t-snap`, `--outdir`.
+
 ## Repository layout
 
 ```
@@ -159,9 +189,11 @@ the norm merely stalls), `--duration`, `--fps`, `--x0`, `--xdot0`,
     ├── style.py                       # shared palette + label conventions
     ├── media_utils.py                 # shared MP4/GIF writers (bundled ffmpeg)
     ├── mass_spring_damper/
-    │   ├── dynamics.py                # ż = Az, A = [[0,1],[−k,−c]]
+    │   ├── dynamics.py                # ẋ = Ax, A = [[0,1],[−k,−c]]
     │   ├── metrics.py                 # Lyapunov P, quadratic forms, level sets
     │   └── animate.py                 # phase-plane + norms figure, CLI
+    ├── pendulum_contraction/
+    │   └── animate.py                 # fan of pendulums on S¹ + P-distance, CLI
     ├── pendulum_cylinder/
     │   ├── dynamics.py                # pendulum ODE + integration
     │   ├── cylinder.py                # embedding of TS¹ ≅ S¹ × ℝ into R³

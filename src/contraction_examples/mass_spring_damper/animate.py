@@ -130,13 +130,25 @@ class MassSpringDamperFigure:
                 continue
             ax.axvline(self.traj.t[i], color=GUIDE, lw=0.7, ls=(0, (1, 3)),
                        zorder=1)
-        # pure-exponential reference with the true decay rate of ||z||^2
+        # asymptotic average decay set by eig(A) — a trend line, NOT a bound:
+        # the P-curve breathes around it as its rate swings between
+        # 1/lambda_max(P) and 1/lambda_min(P)
         rate = self.decay_rate
         ref = self.v_p[0] * np.exp(-rate * self.traj.t)
         ax.plot(self.traj.t, ref, color=GUIDE, lw=1.0, zorder=2)
         exp_str = "e^{-t}" if abs(rate - 1.0) < 1e-9 else f"e^{{-{rate:g}\\,t}}"
         ax.text(self.traj.t[-1] * 0.76, ref[int(0.76 * self.n)] * 0.12,
-                rf"$\propto {exp_str}$", fontsize=9, color=MUTED)
+                rf"average: $\propto {exp_str}$", fontsize=9, color=MUTED)
+        # the guaranteed envelope from d/dt V_P <= -V_P / lambda_max(P):
+        # the blue curve never crosses this one
+        lam_max = np.linalg.eigvalsh(self.P)[-1]
+        ref_g = self.v_p[0] * np.exp(-self.traj.t / lam_max)
+        ax.plot(self.traj.t, ref_g, color=MUTED, lw=1.0, ls=(0, (6, 3)),
+                alpha=0.65, zorder=2)
+        ax.text(self.traj.t[-1] * 0.55, ref_g[int(0.55 * self.n)] * 2.2,
+                rf"guaranteed bound: $\propto e^{{-t/\lambda_{{\max}}(P)}}"
+                rf" = e^{{-{1 / lam_max:.2f}\,t}}$",
+                fontsize=9, color=MUTED)
 
         (self.line_eye,) = ax.plot([], [], ls=(0, (5, 3)), lw=1.8, color=RED,
                                    zorder=3,
