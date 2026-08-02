@@ -186,31 +186,36 @@ The damped double pendulum M(q)q̈ + C(q, q̇)q̇ + g(q) + Dq̇ = 0 lives on the
 configuration torus T². **Is the contraction metric the mass matrix?**
 Almost: M(q) is the kinetic-energy Riemannian metric on T², and it is the
 *velocity block* of the contraction metric — but by itself it only gives
-semi-contraction. With M₀, K₀ the mass and stiffness matrices at the
-hanging equilibrium, the energy metric diag(K₀, M₀) satisfies
+semi-contraction: the energy metric diag(K₀, M₀) has
 λ_max(PA + AᵀP) = 0 (dissipation acts only through δq̇, the same stall as
-Example 3's circle). The classic cross-term repair
+Example 3's circle). The cross-term repair, in its **state-dependent**
+form used here, puts the actual mass matrix in the velocity block:
 
-$$P = \begin{bmatrix} K_0 + \varepsilon D & \varepsilon M_0 \\ \varepsilon M_0 & M_0 \end{bmatrix}
-\quad\Longrightarrow\quad
-PA + A^\top P = -2\,\mathrm{blkdiag}(\varepsilon K_0,\ D - \varepsilon M_0) \prec 0$$
+$$P(q) = \begin{bmatrix} K_0 + \varepsilon D & \varepsilon M(q) \\ \varepsilon M(q) & M(q) \end{bmatrix},$$
 
-(exact identity, valid whenever K₀ ≻ 0 and D − εM₀ ≻ 0) makes the
-linearization strictly contracting. For the nonlinear pendulum the same
-constant P certifies contraction wherever PJ(x) + J(x)ᵀP ≺ 0, with J the
-state Jacobian: the animation paints λ_max(PJ + JᵀP) on the q̇ = 0 slice of
-the torus (blue island = contracting, dashed line = zero contour) and runs
-a 3×3 fan of trajectories inside it. The certificate is checked along all
-inter-trajectory *segments* (that is what the finite-distance decay proof
-integrates over), and the max pairwise P-distance decays monotonically
-while the Euclidean one transiently grows.
+and because the metric now varies along the flow, the contraction
+condition acquires the metric-rate term:
 
-Two honest caveats built into the example: contraction on T² is
-necessarily local (the double pendulum has four equilibria — one stable,
-three unstable, shown as open circles — so no metric can contract the
-whole torus), and the certified region for this constant-chart metric is
-small (`--spread` beyond it prints a warning; promoting M₀ → M(q) to the
-state-dependent Riemannian metric is the standard way to enlarge it).
+$$\dot{P} + P J + J^\top P \prec 0, \qquad \dot{P} = \textstyle\sum_k \frac{\partial P}{\partial q_k}\,\dot{q}_k,$$
+
+with J the state Jacobian (Ṗ vanishes identically on the q̇ = 0 slice,
+which is what the animation paints on the torus: blue island =
+contracting, dashed line = zero contour). Distances are measured as
+segment integrals of √(δᵀP(γ)δ), and the certificate is checked along all
+inter-trajectory *segments* — that is what the finite-distance decay
+proof integrates over. The max pairwise P-distance then decays
+monotonically while the Euclidean one transiently grows.
+
+The constant-chart variant (M(q) frozen at M₀, `--constant-metric`)
+satisfies the exact linearization identity
+PA + AᵀP = −2·blkdiag(εK₀, D − εM₀), and the comparison is the point of
+the defaults: at the default fan (±0.18 rad) the state-dependent P(q) is
+certified with margin −0.31 while the constant P₀ **fails** for every ε
+of the family — tracking M(q) roughly doubles the certified margin and
+rate. Two honest caveats remain: contraction on T² is necessarily local
+(four equilibria — one stable, three unstable open circles — so no metric
+contracts the whole torus), and the certified region is still finite
+(`--spread` beyond it prints a warning).
 
 ![Double pendulum contraction region and fan on the torus](media/double_pendulum_contraction.gif)
 
@@ -222,8 +227,10 @@ uv run double-pendulum-contraction            # analysis + PNG + MP4 + GIF
 uv run double-pendulum-contraction --no-video # analysis + summary PNG only
 ```
 
-Flags: `--eps` (cross-term weight; rejected if D − εM₀ ⊁ 0), `--spread`,
-`--gravity`, `--damping`, `--duration`, `--fps`, `--t-snap`, `--outdir`.
+Flags: `--eps` (cross-term weight; rejected if P(q) or D − εM₀ lose
+definiteness), `--constant-metric` (freeze M(q) at M₀ for comparison),
+`--spread`, `--gravity`, `--damping`, `--duration`, `--fps`, `--t-snap`,
+`--outdir`.
 
 ## Repository layout
 
@@ -240,7 +247,7 @@ Flags: `--eps` (cross-term weight; rejected if D − εM₀ ⊁ 0), `--spread`,
     ├── pendulum_contraction/
     │   └── animate.py                 # fan of pendulums on S¹ + P-distance, CLI
     ├── double_pendulum_contraction/
-    │   ├── metric.py                  # block metric P from M₀, K₀, D; certificates
+    │   ├── metric.py                  # state-dependent P(q) from M(q), K₀, D; certificates
     │   └── animate.py                 # painted torus + P-distance panel, CLI
     ├── pendulum_cylinder/
     │   ├── dynamics.py                # pendulum ODE + integration

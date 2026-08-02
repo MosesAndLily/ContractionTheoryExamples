@@ -35,9 +35,8 @@ from ..double_pendulum_torus.dynamics import (DoublePendulumParams,
 from ..mass_spring_damper.metrics import quad_form
 from ..media_utils import mp4_to_gif, render_video
 from ..style import BLUE, GUIDE, HALO, INK, MUTED, ORANGE, SURFACE
-from .metric import (damping_matrix, jacobian, mass_matrix_at_origin,
-                     segment_certificate, slice_field, stiffness_at_origin,
-                     structured_metric)
+from .metric import (MechanicalMetric, damping_matrix, mass_matrix_at_origin,
+                     segment_certificate, slice_field, stiffness_at_origin)
 
 RED = "#e34948"    # categorical slot 8: expanding / the Euclidean metric
 OVERSAMPLE = 4     # simulation samples per video frame
@@ -51,14 +50,47 @@ def wrap(angle: np.ndarray) -> np.ndarray:
     return np.arctan2(np.sin(angle), np.cos(angle))
 
 
+def metric_segment_distance(metric: MechanicalMetric, Zi: np.ndarray,
+                            Zj: np.ndarray, n_s: int = 9) -> np.ndarray:
+    """Length of the straight segment from Zj to Zi in the metric P(q),
+    integrated as int_0^1 sqrt(dx^T P(gamma(s)) dx) ds, with Delta q
+    wrapped on the torus. Exact (no integration error) for the constant
+    variant, since the integrand is then s-independent."""
+    p, eps = metric.p, metric.eps
+    a = (p.m1 + p.m2) * p.l1**2
+    c = p.m2 * p.l2**2
+    bl = p.m2 * p.l1 * p.l2
+    K = stiffness_at_origin(p) + eps * damping_matrix(p)
+    k1, k2 = K[0, 0], K[1, 1]
+    dz = Zi - Zj
+    dz[:, :2] = wrap(dz[:, :2])
+    d1, d2, d3, d4 = dz.T
+    acc = np.zeros(len(dz))
+    svals = np.linspace(0.0, 1.0, n_s)
+    for s in svals:
+        if metric.constant:
+            b = bl
+        else:
+            q1 = Zj[:, 0] + s * d1
+            q2 = Zj[:, 1] + s * d2
+            b = bl * np.cos(q1 - q2)
+        val = (k1 * d1**2 + k2 * d2**2
+               + a * d3**2 + 2.0 * b * d3 * d4 + c * d4**2
+               + 2.0 * eps * (d1 * (a * d3 + b * d4)
+                              + d2 * (b * d3 + c * d4)))
+        w = (0.5 if s in (0.0, 1.0) else 1.0) / (n_s - 1)
+        acc += w * np.sqrt(np.maximum(val, 0.0))
+    return acc
+
+
 class DoublePendulumContractionFigure:
     """Builds the two-panel figure and exposes ``update(frame)`` for animation."""
 
     def __init__(self, trajs: list, params: DoublePendulumParams,
-                 P: np.ndarray, eps: float, slice_data, cert, dpi: int = 100):
+                 metric: MechanicalMetric, slice_data, cert, dpi: int = 100):
         self.params = params
-        self.P = P
-        self.eps = eps
+        self.metric = metric
+        self.eps = metric.eps
         self.t = trajs[0].t
         self.n = len(self.t)
         self.n_frames = int(np.ceil(self.n / OVERSAMPLE))
@@ -67,7 +99,9 @@ class DoublePendulumContractionFigure:
                                             tr.theta1_dot, tr.theta2_dot))
                            for tr in trajs])
         self.d_eye = self._max_pairwise(np.eye(4))
-        self.d_p = self._max_pairwise(P)
+        self.d_p = np.max([metric_segment_distance(metric, self.Z[i], self.Z[j])
+                           for i in range(self.N)
+                           for j in range(i + 1, self.N)], axis=0)
 
         # per-trajectory 3D points (pushed slightly off the painted surface)
         self.pts3d, self.facing = [], []
@@ -141,7 +175,7 @@ class DoublePendulumContractionFigure:
             r"   ($\prec 0$: contracting)",
             fontsize=8.5, color=INK,
         )
-        cbar.set_ticks([round(float(LAM.min()), 1), 0, 2, 4, 6, 8])
+        cbar.set_ticks([float(np.ceil(LAM.min() * 10.0) / 10.0), 0, 2, 4, 6, 8])
         cbar.ax.tick_params(colors=MUTED, labelsize=8)
         cbar.outline.set_edgecolor(MUTED)
         cbar.outline.set_linewidth(0.8)
@@ -176,17 +210,20 @@ class DoublePendulumContractionFigure:
         M0 = mass_matrix_at_origin(self.params)
         K0 = stiffness_at_origin(self.params)
         p = self.params
+        frozen = "  (M frozen at q=0)" if self.metric.constant else ""
         ax.text2D(
             0.0, 0.985,
             f"M(q)q̈ + C(q,q̇)q̇ + g(q) + Dq̇ = 0   "
             f"(m={p.m1:g}, l={p.l1:g}, g={p.gravity:g}, D={p.damping1:g}·I)\n"
-            f"M₀ = [ {M0[0, 0]:g} {M0[0, 1]:g} ; {M0[1, 0]:g} {M0[1, 1]:g} ]"
-            f"   K₀ = diag({K0[0, 0]:g}, {K0[1, 1]:g})   ε = {self.eps:g}\n"
-            "P = [ K₀+εD  εM₀ ; εM₀  M₀ ]  →  "
-            "PA+AᵀP = −2·blkdiag(εK₀, D−εM₀) ≺ 0\n"
-            "ε=0 (energy metric): λmax(PA+AᵀP) = 0 — only semi-contraction\n"
+            f"P(q) = [ K₀+εD  εM(q) ; εM(q)  M(q) ]   ε = {self.eps:g}"
+            f" — velocity block = mass matrix{frozen}\n"
+            f"M(0) = [ {M0[0, 0]:g} {M0[0, 1]:g} ; {M0[1, 0]:g} "
+            f"{M0[1, 1]:g} ]   K₀ = diag({K0[0, 0]:g}, {K0[1, 1]:g})"
+            "   (ε=0: only semi-contraction)\n"
+            "condition: Ṗ + PJ + JᵀP ≺ 0   (Ṗ = Σₖ ∂P/∂qₖ·q̇ₖ ≡ 0 on the "
+            "q̇=0 slice shown)\n"
             f"certificate on inter-trajectory segments: "
-            f"max λmax(PJ+JᵀP) = {cert[0]:+.2f} ≺ 0",
+            f"max λmax = {cert[0]:+.2f} ≺ 0",
             transform=ax.transAxes, fontsize=8, color=MUTED,
             family="monospace", va="top", path_effects=HALO,
         )
@@ -296,13 +333,16 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--gravity", type=float, default=2.0)
     parser.add_argument("--damping", type=float, default=1.0,
                         help="joint damping (D = damping * I)")
-    parser.add_argument("--eps", type=float, default=0.3,
+    parser.add_argument("--eps", type=float, default=0.25,
                         help="cross-term weight of the block metric")
-    parser.add_argument("--spread", type=float, default=0.15,
+    parser.add_argument("--spread", type=float, default=0.18,
                         help="fan is the 3x3 grid of (theta1, theta2) in "
                              "[-spread, +spread]^2, released from rest; the "
-                             "default is inside the certified region for the "
-                             "default eps and damping")
+                             "default is certified by the state-dependent "
+                             "metric but NOT by the constant one")
+    parser.add_argument("--constant-metric", action="store_true",
+                        help="freeze the mass matrix at the equilibrium "
+                             "(the constant-chart metric P0)")
     parser.add_argument("--t-snap", type=float, default=2.0,
                         help="time of the fan pose in the summary PNG")
     parser.add_argument("--no-video", action="store_true",
@@ -314,7 +354,7 @@ def main(argv: list[str] | None = None) -> None:
     params = DoublePendulumParams(gravity=args.gravity, m1=1.0, m2=1.0,
                                   l1=1.0, l2=1.0,
                                   damping1=args.damping, damping2=args.damping)
-    P = structured_metric(params, args.eps)
+    metric = MechanicalMetric(params, args.eps, constant=args.constant_metric)
 
     q0s = [(a, b) for a in (-args.spread, 0.0, args.spread)
            for b in (-args.spread, 0.0, args.spread)]
@@ -325,7 +365,7 @@ def main(argv: list[str] | None = None) -> None:
                   for tr in trajs])
 
     print("Checking the contraction certificate on inter-trajectory segments...")
-    cert = segment_certificate(params, P, Z)
+    cert = segment_certificate(metric, Z)
     if cert[0] >= 0:
         print(f"warning: certificate FAILS (max lambda_max = {cert[0]:+.3f}) — "
               "reduce --spread or increase --damping; the P-distance may "
@@ -334,12 +374,12 @@ def main(argv: list[str] | None = None) -> None:
         print(f"  certified: max lambda_max = {cert[0]:+.3f}, "
               f"guaranteed distance rate {cert[1]:.3f}")
     print("Painting lambda_max(PJ + J^T P) on the q_dot = 0 slice...")
-    slice_data = slice_field(params, P, n=71)
+    slice_data = slice_field(metric, n=71)
 
     args.outdir.mkdir(parents=True, exist_ok=True)
     png = args.outdir / "double_pendulum_contraction.png"
     print(f"Rendering summary image -> {png}")
-    fig_obj = DoublePendulumContractionFigure(trajs, params, P, args.eps,
+    fig_obj = DoublePendulumContractionFigure(trajs, params, metric,
                                               slice_data, cert, dpi=200)
     if cert[0] < 0:
         fig_obj.set_bound(cert[1])
@@ -352,7 +392,7 @@ def main(argv: list[str] | None = None) -> None:
         mp4 = args.outdir / "double_pendulum_contraction.mp4"
         gif = args.outdir / "double_pendulum_contraction.gif"
         print(f"Rendering video -> {mp4}")
-        fig_obj = DoublePendulumContractionFigure(trajs, params, P, args.eps,
+        fig_obj = DoublePendulumContractionFigure(trajs, params, metric,
                                                   slice_data, cert)
         if cert[0] < 0:
             fig_obj.set_bound(cert[1])
