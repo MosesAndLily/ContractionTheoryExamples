@@ -39,27 +39,7 @@ from ..pendulum_cylinder.dynamics import PendulumParams, simulate
 from ..style import BLUE, GUIDE, HALO, INK, MUTED, ORANGE, SURFACE
 
 RED = "#e34948"    # categorical slot 8: the Euclidean metric (the one that fails)
-AQUA = "#1baf7a"   # categorical slot 3: the uniform-rate metric P2
 OVERSAMPLE = 4     # simulation samples per video frame
-
-
-def uniform_rate_metric(A: np.ndarray, match_det_of: np.ndarray):
-    """The metric in which the linearization contracts at a UNIFORM rate.
-
-    Solving P2 A + A^T P2 = -2 sigma P2 (Q proportional to P) requires
-    A + sigma I to be skew in the P2 inner product, which for a complex
-    pair sigma = -Re(lambda) is achieved by the real modal coordinates:
-    P2 = T^-T T^-1 with T = [Re v, Im v]. Returns None for real spectra.
-    Scaled to the determinant of ``match_det_of`` for comparable curves.
-    """
-    lam, V = np.linalg.eig(A)
-    if np.all(np.isreal(lam)):
-        return None
-    v = V[:, 0]
-    T = np.column_stack([v.real, v.imag])
-    Ti = np.linalg.inv(T)
-    P2 = Ti.T @ Ti
-    return P2 * np.sqrt(np.linalg.det(match_det_of) / np.linalg.det(P2))
 
 
 def contraction_region(P: np.ndarray, k: float, c: float) -> float:
@@ -99,9 +79,6 @@ class PendulumContractionFigure:
                               for tr in trajs])
         self.d_eye = self._max_pairwise(np.eye(2))
         self.d_p = self._max_pairwise(P)
-        k = params.gravity / params.length
-        self.P2 = uniform_rate_metric(make_A(k, params.damping), P)
-        self.d_p2 = self._max_pairwise(self.P2) if self.P2 is not None else None
 
         self.fig = plt.figure(figsize=(12.8, 6.0), dpi=dpi)
         self.fig.patch.set_facecolor(SURFACE)
@@ -222,24 +199,18 @@ class PendulumContractionFigure:
             ax.plot(self.t, ref_g, color=MUTED, lw=1.0, ls=(0, (6, 3)),
                     alpha=0.65, zorder=2)
             ax.text(self.t[-1] * 0.52, ref_g[int(0.52 * self.n)] * 0.48,
-                    r"guaranteed bound over the fan region: $\propto "
+                    r"guaranteed bound (fan region): $\propto "
                     rf"e^{{-{0.5 * rate_min:.2f}\,t}}$",
                     fontsize=9, color=MUTED, ha="center")
 
         (self.line_eye,) = ax.plot(
             [], [], ls=(0, (5, 3)), lw=1.8, color=RED, zorder=3,
-            label=r"$\max_{i,j}\ \|\Delta\mathbf{x}_{ij}\|$ — not monotone",
+            label=r"$\max_{i,j}\ \|\Delta\mathbf{x}_{ij}\|$ — not monotone (flats, even growth)",
         )
         (self.line_p,) = ax.plot(
             [], [], lw=1.8, color=BLUE, zorder=4,
-            label=r"$\max_{i,j}\ \sqrt{\Delta\mathbf{x}_{ij}^{\top} P\, \Delta\mathbf{x}_{ij}}$ — monotone: contraction",
+            label=r"$\max_{i,j}\ \sqrt{\Delta\mathbf{x}_{ij}^{\top} P\, \Delta\mathbf{x}_{ij}}$ — monotone, exponential: contraction",
         )
-        self.line_p2 = None
-        if self.d_p2 is not None:
-            (self.line_p2,) = ax.plot(
-                [], [], lw=1.8, color=AQUA, zorder=4,
-                label=r"same in $P_2$ ($P_2A + A^{\top}\!P_2 = -P_2$) — uniform rate: clean",
-            )
         ax.text(0.03, 0.04,
                 r"$\Delta\mathbf{x}_{ij} = (\Delta\theta$ on $S^1,\ \Delta\dot{\theta})$",
                 transform=ax.transAxes, fontsize=9, color=MUTED)
@@ -264,8 +235,6 @@ class PendulumContractionFigure:
         self._place_state(i)
         self.line_eye.set_data(self.t[: i + 1], self.d_eye[: i + 1])
         self.line_p.set_data(self.t[: i + 1], self.d_p[: i + 1])
-        if self.line_p2 is not None:
-            self.line_p2.set_data(self.t[: i + 1], self.d_p2[: i + 1])
         return ()
 
     def draw_summary(self, i_snap: int) -> None:
@@ -273,8 +242,6 @@ class PendulumContractionFigure:
         self._place_state(i_snap)
         self.line_eye.set_data(self.t, self.d_eye)
         self.line_p.set_data(self.t, self.d_p)
-        if self.line_p2 is not None:
-            self.line_p2.set_data(self.t, self.d_p2)
 
 
 # ------------------------------------------------------------------ rendering
