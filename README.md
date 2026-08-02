@@ -221,6 +221,7 @@ contracts the whole torus), and the certified region is still finite
 
 Summary figure: [`media/double_pendulum_contraction.png`](media/double_pendulum_contraction.png)
 · video: [`media/double_pendulum_contraction.mp4`](media/double_pendulum_contraction.mp4)
+· full derivation: [`docs/contraction_math.md`](docs/contraction_math.md)
 
 ```sh
 uv run double-pendulum-contraction            # analysis + PNG + MP4 + GIF
