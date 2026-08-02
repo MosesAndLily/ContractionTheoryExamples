@@ -113,28 +113,28 @@ velocities so you can see the difference.
 
 ## Example 3 — contraction needs a metric: the mass-spring-damper
 
-The mass-spring-damper ż = Az with A = [[0, 1], [−k, −c]] (m = 1, k = 2,
-c = 1 by default) is exponentially stable — eig(A) = −½ ± (√7/2)i — yet it
-is **not** contracting in the Euclidean metric. The symmetric part
-A + Aᵀ = [[0, −1], [−1, −2]] is *indefinite*, eig = −1 ± √2 ≈ {+0.41, −2.41},
-so
+The mass-spring-damper **ẋ** = A**x**, with state vector **x** = (x, ẋ) and
+A = [[0, 1], [−k, −c]] (m = 1, k = 2, c = 1 by default), is exponentially
+stable — eig(A) = −½ ± (√7/2)i — yet it is **not** contracting in the
+Euclidean metric. The symmetric part A + Aᵀ = [[0, −1], [−1, −2]] is
+*indefinite*, eig = −1 ± √2 ≈ {+0.41, −2.41}, so
 
-$$\tfrac{d}{dt}\|\delta z\|^2 = \delta z^\top (A + A^\top)\,\delta z$$
+$$\tfrac{d}{dt}\|\delta \mathbf{x}\|^2 = \delta \mathbf{x}^\top (A + A^\top)\,\delta \mathbf{x}$$
 
 is zero at every turning point and **positive** on part of every
 oscillation: the Euclidean norm of a perturbation transiently *grows*.
 Solving the Lyapunov equation PA + AᵀP = −I (done in
 [`metrics.py`](src/contraction_examples/mass_spring_damper/metrics.py) via
 `scipy.linalg.solve_continuous_lyapunov`) gives
-P = [[7/4, 1/4], [1/4, 3/4]], and in the weighted norm zᵀPz the same flow
-contracts at every instant: d/dt (zᵀPz) = −‖z‖².
+P = [[7/4, 1/4], [1/4, 3/4]], and in the weighted norm **x**ᵀP**x** the same
+flow contracts at every instant: d/dt (**x**ᵀP**x**) = −‖**x**‖².
 
 The animation shows exactly where P lives — in the **shape of the level
 sets**. The Euclidean circle through the current state stalls and even
 expands as the spiral crosses it, while the tilted P-ellipse shrinks
-monotonically; on the log-scale panel ‖z‖² wobbles against the exponential
-envelope (flat or rising between turning points) while zᵀPz is a clean
-exponential.
+monotonically; on the log-scale panel ‖**x**‖² wobbles against the
+exponential envelope (flat or rising between turning points) while
+**x**ᵀP**x** is a clean exponential.
 
 ![Mass-spring-damper: Euclidean circle stalls, P-ellipse contracts](media/mass_spring_damper.gif)
 

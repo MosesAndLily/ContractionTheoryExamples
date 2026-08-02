@@ -84,9 +84,9 @@ class MassSpringDamperFigure:
                 alpha=0.45, zorder=2)
         (self.circle,) = ax.plot([], [], ls=(0, (5, 3)), lw=1.8, color=RED,
                                  zorder=3,
-                                 label=r"$\|z\|^2 = c$ — circle, not monotone")
+                                 label=r"$\|\mathbf{x}\|^2 = c$ — circle, not monotone")
         (self.ellipse,) = ax.plot([], [], lw=1.8, color=BLUE, zorder=4,
-                                  label=r"$z^{\top}\!P\,z = c$ — ellipse, always shrinks")
+                                  label=r"$\mathbf{x}^{\top}\!P\,\mathbf{x} = c$ — ellipse, always shrinks")
         (self.dot,) = ax.plot([], [], "o", ms=10, color=ORANGE,
                               mec="white", mew=1.5, zorder=7)
         ax.legend(loc="upper right", fontsize=8.5, frameon=False,
@@ -94,13 +94,14 @@ class MassSpringDamperFigure:
 
         k, c = -self.A[1, 0], -self.A[1, 1]
         s1, s2 = np.linalg.eigvalsh(self.A + self.A.T)
-        growth = ("‖z‖ transiently grows" if s2 > 1e-9
-                  else "‖z‖ stalls at ẋ = 0")
+        growth = "transiently grows" if s2 > 1e-9 else "stalls at ẋ = 0"
         p = self.P
         ax.text(
             0.01, 0.015,
-            f"ż = Az,  A = [ 0  1 ; −{k:g} −{c:g} ]   (m=1, k={k:g}, c={c:g})\n"
-            f"eig(A+Aᵀ) = {{{s1:+.2f}, {s2:+.2f}}}  →  {growth}\n"
+            rf"$\dot{{\mathbf{{x}}}} = A\mathbf{{x}}$,  "
+            f"A = [ 0  1 ; −{k:g} −{c:g} ]   (m=1, k={k:g}, c={c:g})\n"
+            rf"eig(A+Aᵀ) = {{{s1:+.2f}, {s2:+.2f}}}  →  $\|\mathbf{{x}}\|$ "
+            f"{growth}\n"
             f"P = [ {p[0, 0]:.2f}  {p[0, 1]:.2f} ; {p[0, 1]:.2f}  {p[1, 1]:.2f} ],"
             "   PA + AᵀP = −I",
             transform=ax.transAxes, fontsize=8.5, color=MUTED,
@@ -139,9 +140,9 @@ class MassSpringDamperFigure:
 
         (self.line_eye,) = ax.plot([], [], ls=(0, (5, 3)), lw=1.8, color=RED,
                                    zorder=3,
-                                   label=r"$\|z(t)\|^2$ — not monotone (flats, even growth)")
+                                   label=r"$\|\mathbf{x}(t)\|^2$ — not monotone (flats, even growth)")
         (self.line_p,) = ax.plot([], [], lw=1.8, color=BLUE, zorder=4,
-                                 label=r"$z(t)^{\top}\!P\,z(t)$ — monotone, exponential")
+                                 label=r"$\mathbf{x}(t)^{\top}\!P\,\mathbf{x}(t)$ — monotone, exponential")
         ax.legend(loc="upper right", fontsize=8.5, frameon=False,
                   labelcolor=INK, handlelength=1.6)
 
