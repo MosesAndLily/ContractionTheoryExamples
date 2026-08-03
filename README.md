@@ -233,6 +233,27 @@ definiteness), `--constant-metric` (freeze M(q) at M₀ for comparison),
 `--spread`, `--gravity`, `--damping`, `--duration`, `--fps`, `--t-snap`,
 `--outdir`.
 
+### Going further — the full (converse) metric
+
+With an *unrestricted* state-dependent metric, nonlinear contraction
+analysis is complete on the basin of attraction: the integral metric
+
+$$P(x) = \int_0^{\infty} e^{2\lambda t}\, \Phi(t;x)^\top Q\, \Phi(t;x)\, dt,
+\qquad \Phi = \text{variational flow},$$
+
+satisfies **Ṗ + PJ + JᵀP = −2λP − Q exactly** wherever it converges — any
+compact subset of the basin, for λ below the equilibrium rate (derivation
+in [`docs/contraction_math.md`](docs/contraction_math.md) §8a).
+`uv run converse-contraction` computes it by augmented ODE integration,
+self-tests the identity (‖residual‖/‖P‖ ≈ 10⁻⁵), and scans the certified
+rate against fan spread for all three metric families: the constant P₀
+dies at ≈ 0.15 rad, the mechanical P(q) at ≈ 0.20 rad, and the converse
+metric stays certified out to ±1.05 rad and beyond — the price being that
+P(x) needs the trajectory from x (analysis, not synthesis; the
+closed-form/causal alternative is the SOS/CCM route).
+
+![Certified rate vs fan spread: constant, mechanical, converse metrics](media/converse_contraction.png)
+
 ## Repository layout
 
 ```
@@ -249,6 +270,7 @@ definiteness), `--constant-metric` (freeze M(q) at M₀ for comparison),
     │   └── animate.py                 # fan of pendulums on S¹ + P-distance, CLI
     ├── double_pendulum_contraction/
     │   ├── metric.py                  # state-dependent P(q) from M(q), K₀, D; certificates
+    │   ├── converse.py                # full (converse) metric ∫e^{2λt}ΦᵀQΦ dt, CLI
     │   └── animate.py                 # painted torus + P-distance panel, CLI
     ├── pendulum_cylinder/
     │   ├── dynamics.py                # pendulum ODE + integration

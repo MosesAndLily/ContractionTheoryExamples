@@ -20,6 +20,7 @@ torus-linear-flow = "contraction_examples.double_pendulum_torus.linear_flow:main
 mass-spring-damper = "contraction_examples.mass_spring_damper.animate:main"
 pendulum-contraction = "contraction_examples.pendulum_contraction.animate:main"
 double-pendulum-contraction = "contraction_examples.double_pendulum_contraction.animate:main"
+converse-contraction = "contraction_examples.double_pendulum_contraction.converse:main"
 
 [build-system]
 requires = ["hatchling"]

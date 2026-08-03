@@ -149,7 +149,56 @@ pendulum has four — $(0,0)$ stable and $(0,\pi), (\pi,0), (\pi,\pi)$ unstable
 (the open circles on the red part of the torus). The island is necessarily an
 island.
 
-## 8. Numbers for the defaults ($m{=}1$, $l{=}1$, $g{=}2$, $D{=}I$, $\varepsilon{=}0.25$)
+## 8a. The full metric: converse (integral) construction
+
+Can the analysis be done with an *unrestricted* state-dependent metric?
+Yes — and then it is complete on the basin. Let $\Phi(t; x) = D_x \varphi_t(x)$
+be the variational flow, which satisfies the cocycle property
+$\Phi(t; \varphi_s(x))\,\Phi(s; x) = \Phi(t{+}s; x)$. Define, for
+$Q \succ 0$ and a target rate $\lambda$,
+
+$$P(x) = \int_0^{\infty} e^{2\lambda t}\, \Phi(t; x)^\top Q\, \Phi(t; x)\, dt .$$
+
+Then
+
+$$\Phi(s;x)^\top P(\varphi_s x)\, \Phi(s;x)
+= \int_0^\infty e^{2\lambda t} \Phi(t{+}s;x)^\top Q \Phi(t{+}s;x)\, dt
+= e^{-2\lambda s} \int_s^{\infty} e^{2\lambda u} \Phi(u;x)^\top Q \Phi(u;x)\, du .$$
+
+Differentiating in $s$ — using $\partial_s \Phi(s) = J(\varphi_s x)\Phi(s)$
+on the left and Leibniz on the right — and evaluating at $s = 0$
+($\Phi = I$):
+
+$$\boxed{\ \dot P + P J + J^\top P \;=\; -2\lambda P - Q\ }$$
+
+**exactly**, at every $x$ where the integral converges. Convergence holds
+uniformly on any compact subset of the basin of the stable equilibrium
+whenever $\lambda$ is below the equilibrium's exponential rate (here
+$\lambda = 0.1 < 0.22$), since $\Phi$ is eventually governed by the
+equilibrium linearization; positive definiteness follows from the
+$t \approx 0$ part of the integral. So the *full* metric certifies
+contraction with rate $\lambda$ and margin $Q$ on essentially the whole
+basin — the boundary of validity is the basin itself, which is sharp,
+because contraction is false at the saddles.
+
+The trade-offs, honestly: $P(x)$ requires the trajectory from $x$ (it is
+an analysis object, non-causal — one cannot evaluate it without solving
+the ODE), it degenerates as $x$ approaches the basin boundary, and it is
+computed numerically (trajectory + variational + integral states as one
+augmented ODE). When a *closed-form or causal* metric is wanted, one
+parametrizes $P(x)$ (polynomials, trig polynomials) and imposes the same
+LMI via sum-of-squares — the control-contraction-metric (CCM) route.
+
+Implementation: [`converse.py`](../src/contraction_examples/double_pendulum_contraction/converse.py)
+(`uv run converse-contraction`) integrates the augmented 36-state ODE,
+self-tests the boxed identity ($\|\dot P + PJ + J^\top P + 2\lambda P + Q\|/\|P\| \approx 10^{-5}$),
+and compares the certified guaranteed rate of the three families as the
+trajectory fan widens: the constant $P_0$ dies at spread $\approx 0.15$,
+the mechanical $P(q)$ at $\approx 0.20$, while the converse metric stays
+certified far beyond (e.g. $+0.18$ at spread $0.3$, where both restricted
+families already fail).
+
+## 8b. Numbers for the defaults ($m{=}1$, $l{=}1$, $g{=}2$, $D{=}I$, $\varepsilon{=}0.25$)
 
 | Quantity | Value |
 |---|---|
