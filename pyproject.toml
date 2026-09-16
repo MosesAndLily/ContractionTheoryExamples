@@ -21,6 +21,15 @@ mass-spring-damper = "contraction_examples.mass_spring_damper.animate:main"
 pendulum-contraction = "contraction_examples.pendulum_contraction.animate:main"
 double-pendulum-contraction = "contraction_examples.double_pendulum_contraction.animate:main"
 converse-contraction = "contraction_examples.double_pendulum_contraction.converse:main"
+spectral-radius-abscissa = "contraction_examples.spectral_radius_abscissa.plot:main"
+norm-spectrum = "contraction_examples.spectral_radius_abscissa.norms:main"
+induced-log-norms = "contraction_examples.induced_log_norms.plot:main"
+hopfield-norms = "contraction_examples.hopfield_norms.plot:main"
+firing-rate-portrait = "contraction_examples.firing_rate.plot:main"
+firing-rate-bias = "contraction_examples.firing_rate.bias:main"
+parallel-combination = "contraction_examples.parallel_combination.plot:main"
+feedback-interconnection = "contraction_examples.interconnection.plot:main"
+parallel-combination-phases = "contraction_examples.parallel_combination.phases:main"
 
 [build-system]
 requires = ["hatchling"]
