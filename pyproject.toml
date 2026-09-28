@@ -10,6 +10,7 @@ dependencies = [
     "matplotlib>=3.8",
     "pillow>=10.0",
     "imageio-ffmpeg>=0.4.9",
+    "mujoco>=3.14.0",
 ]
 
 [project.scripts]
@@ -30,6 +31,7 @@ firing-rate-bias = "contraction_examples.firing_rate.bias:main"
 parallel-combination = "contraction_examples.parallel_combination.plot:main"
 feedback-interconnection = "contraction_examples.interconnection.plot:main"
 parallel-combination-phases = "contraction_examples.parallel_combination.phases:main"
+rod-potentials = "contraction_examples.rod_potentials.animate:main"
 
 [build-system]
 requires = ["hatchling"]

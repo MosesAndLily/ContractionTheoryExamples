@@ -254,6 +254,62 @@ closed-form/causal alternative is the SOS/CCM route).
 
 ![Certified rate vs fan spread: constant, mechanical, converse metrics](media/converse_contraction.png)
 
+## Example 6 — superimposing three potentials: a first-order two-rod arm (MuJoCo)
+
+A planar two-rod arm (l₁ = l₂ = 1, relative joint angles q on the torus
+T²) driven by the **first-order** flow
+
+$$b\,\dot{q} = -\nabla U(q), \qquad U = U_q + U_x + U_\phi,$$
+
+the superposition of a joint-space, a task-position and a task-orientation
+potential, all targeting the same goal q* (x* and φ* are its tip position
+and orientation):
+
+$$U_q = k_q \sum_i \bigl(1-\cos(q_i-q_i^*)\bigr),\quad
+U_x = \tfrac{1}{2}k_x\,\|x(q)-x^*\|^2,\quad
+U_\phi = k_\phi\bigl(1-\cos(q_1+q_2-\phi^*)\bigr).$$
+
+The cosines are the periodic versions of ½k(·)², so every term is a smooth
+function on T². MuJoCo supplies the forward kinematics, the tip-site
+Jacobians and the rendering. The task terms are the usual impedance
+pull-backs, ∇Uₓ = Jₓᵀkₓ(x − x*) and ∇U_φ = J_φᵀk_φ sin(φ − φ*). The MuJoCo
+gradients are checked against the closed form at startup (agreement
+≈ 1e-15). The flow has no inertia, so it is integrated with RK4 on `qpos`
+instead of `mj_step`.
+
+**Why it contracts.** The Jacobian of a gradient flow is −∇²U/b, which is
+symmetric. In the flat metric of T², the flow therefore contracts at rate
+λ_min(∇²U)/b wherever that is positive. By Weyl's inequality the rates of
+the superimposed terms add at worst:
+
+$$\lambda_{\min}\Bigl(\textstyle\sum_i \nabla^2 U_i\Bigr) \;\ge\; \sum_i \lambda_{\min}(\nabla^2 U_i).$$
+
+Each column of the figure drives the same fan of nine arms with one term,
+and the last column uses the sum:
+
+| potential | contraction on T² | what the fan does |
+|---|---|---|
+| U_q (joint) | ∇²U_q = diag(k_q cos Δq_i): contracting for \|Δq_i\| < π/2 | converges to q*; certified (λ_min ≥ 0.83) |
+| U_x (task position) | JᵀJ plus a curvature term that goes indefinite; **two minima** (q* and the elbow-flipped mirror) | converges but is not certified (λ_min reaches −0.58 between trajectories); `--spread 1.2` sends an arm to the mirror |
+| U_φ (task orientation) | rank-1 Hessian k_φ cos(·)·𝟙𝟙ᵀ: **semi-contracting** only | stops on the whole (1,1) circle q₁ + q₂ = φ* of minima; distance stays flat |
+| **U_q + U_x + U_φ** | local rate 1.62 at q* (vs 1.00, 0.50, 0) | unique goal; certified (λ_min ≥ 0.29 on every inter-trajectory segment) |
+
+![Three potentials and their superposition: MuJoCo fan, torus, distances](media/rod_potentials.gif)
+
+Summary figure: [`media/rod_potentials.png`](media/rod_potentials.png)
+· video: [`media/rod_potentials.mp4`](media/rod_potentials.mp4)
+
+```sh
+uv run rod-potentials            # renders PNG + MP4 + GIF into media/
+uv run rod-potentials --no-video # summary PNG only (fast)
+uv run rod-potentials --spread 1.2 --no-video  # U_x alone splits onto the mirror
+```
+
+Flags: `--k-q`, `--k-x`, `--k-phi`, `--b`, `--q-star Q1 Q2`, `--spread`,
+`--duration`, `--fps`, `--t-snap`, `--outdir`. One caveat: at
+`--spread 1.2` the sum still brings every arm to q*, but the segment
+certificate fails. The contracting region is local, just as in Example 5.
+
 ## Repository layout
 
 ```
@@ -277,11 +333,15 @@ closed-form/causal alternative is the SOS/CCM route).
     │   ├── cylinder.py                # embedding of TS¹ ≅ S¹ × ℝ into R³
     │   ├── animate.py                 # two-panel figure, animation, CLI
     │   └── lagrangian.py              # Lagrangian colormap on TS¹, CLI
-    └── double_pendulum_torus/
+    ├── double_pendulum_torus/
         ├── dynamics.py                # double pendulum ODE + energy + integration
         ├── torus.py                   # embedding of T² ≅ S¹ × S¹ into R³
         ├── animate.py                 # two-panel figure, animation, CLI
         └── linear_flow.py             # straight-line (geodesic) flow on T², CLI
+    └── rod_potentials/
+        ├── potentials.py              # U_q, U_x, U_φ: gradients, Hessians, certificate
+        ├── model.py                   # MuJoCo MJCF of N arms, MuJoCo gradients, RK4 flow
+        └── animate.py                 # MuJoCo renders + painted tori + distances, CLI
 ```
 
 Conventions for adding a new example: put the model in its own package with a
